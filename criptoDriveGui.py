@@ -14,9 +14,8 @@ class CriptoDriveGui(EasyFrame):
 
         # Disposizione Pannelli
         dataPanel = self.addPanel(row=0, column=0, background="white")
-        checkboxPanel = self.addPanel(row=1, column=0, background="black")
-        radioPanel = self.addPanel(row=2, column= 0, background="blue")
-        buttonPanel = self.addPanel(row=3, column=0, background="black")
+        radioPanel = self.addPanel(row=1, column= 0, background="")
+        buttonPanel = self.addPanel(row=2, column=0, background="black")
 
         # Panel Uno
         dataPanel.addLabel(text="PATH: ", row=0, column=0, sticky="NSEW")
@@ -26,9 +25,9 @@ class CriptoDriveGui(EasyFrame):
         dataPanel.addLabel(text="Alg_password:", row=4, column=0, sticky="NSEW")
 
         self.FilePath = dataPanel.addTextField(text="seleziona cartella", row=0, column=1, width=70, sticky="EW")
-        self.S_K_Path = dataPanel.addTextField(text="simmetryc key", row=1, column=1, width=70, sticky="EW")
-        self.Priv_K_Path = dataPanel.addTextField(text="private key key", row=2, column=1, width=70, sticky="EW")
-        self.Pub_K_Path = dataPanel.addTextField(text="public key key", row=3, column=1, width=70, sticky="EW")
+        self.S_K_Path = dataPanel.addTextField(text="simmetryc .key", row=1, column=1, width=70, sticky="EW")
+        self.Priv_K_Path = dataPanel.addTextField(text="private key .pem", row=2, column=1, width=70, sticky="EW")
+        self.Pub_K_Path = dataPanel.addTextField(text="public key .pem", row=3, column=1, width=70, sticky="EW")
         self.Alg_Passw = dataPanel.addTextField(text="", row=4, column=1, width=70, sticky="EW")
 
         self.bt_file_path = dataPanel.addButton(text="Seleziona", row=0, column=2, command=self.selezionaPath)
@@ -36,27 +35,41 @@ class CriptoDriveGui(EasyFrame):
         self.bt_priv_key = dataPanel.addButton(text="Private_key", row=2, column=2, command=self.select_priv_key)
         self.bt_pub_key = dataPanel.addButton(text="Public_key", row=3, column=2, command=self.select_pub_key)
 
-        # Panel Due
-        #self.checkCifra = checkboxPanel.addCheckbutton(text="cifra_solo_file_path", row=0, column=0, sticky="NSEW")
-        #self.checkUpload = checkboxPanel.addCheckbutton(text="Upload Drive", row=0, column=2)
-        #self.checkDownload = checkboxPanel.addCheckbutton(text="Download File", )
-
         #Panel tre
+        #Key_radioGroup
+        self.Key_radioGroup = radioPanel.addRadiobuttonGroup(row=1,column=1, orient="horizontal")
+        defaultKrb = self.Key_radioGroup.addRadiobutton(text="NewSimmetricKey")
+        self.Key_radioGroup.setSelectedButton(defaultKrb)
+        self.Key_radioGroup.addRadiobutton(text="NewRsaKey")
+        self.Key_radioGroup.addRadiobutton(text="BothKey")
+        self.Key_radioGroup.addRadiobutton(text="KeyExist")
+
         #Path_radioGroup
-        self.Path_radioGroup = radioPanel.addRadiobuttonGroup(row=1,column=3)
-        defaultRB = self.Path_radioGroup.addRadiobutton(text="LocalPath")
-        self.Path_radioGroup.setSelectedButton(defaultRB)
+        self.radioLabel = radioPanel.addLabel(text="Modalità", row=0, column=1)
+        self.radioLabel["height"]=0
+        self.Path_radioGroup = radioPanel.addRadiobuttonGroup(row=2, column=1)
+        defaultPrb = self.Path_radioGroup.addRadiobutton(text="LocalPath")
+        self.Path_radioGroup.setSelectedButton(defaultPrb)
         self.Path_radioGroup.addRadiobutton(text="Recursive")
         #Reomote_radioGroup
-        self.Remote_radioGroup = radioPanel.addRadiobuttonGroup(row=2, column=3, orient="horizontal")
-        defaultRB = self.Remote_radioGroup.addRadiobutton(text="Upload")
-        self.Remote_radioGroup.setSelectedButton(defaultRB)
+        self.Remote_radioGroup = radioPanel.addRadiobuttonGroup(row=3, column=1, orient="horizontal")
+        defaultRrb = self.Remote_radioGroup.addRadiobutton(text="Nothing")
+        self.Remote_radioGroup.setSelectedButton(defaultRrb)
+        self.Remote_radioGroup.addRadiobutton(text="Upload")
         self.Remote_radioGroup.addRadiobutton(text="Download")
-        self.Remote_radioGroup.addRadiobutton(text="Nothing")
 
         # Panel quattro
-        self.buttonCifra = buttonPanel.addButton(text="Cifra->", row=1, column=0, columnspan=2, command=self.cifra)
-        self.buttonDecifra = buttonPanel.addButton(text="Decifra->", row=1, column=1, columnspan=2, command=self.decifra)
+        self.new_directory = buttonPanel.addButton(text="cartella_drive", row=0, column=0, command=self.directory_drive)
+        self.buttonCifra = buttonPanel.addButton(text="Cifra->", row=0, column=0, columnspan=2, command=self.cifra)
+        self.buttonCifra["width"] = 20
+        self.buttonCifra["height"] = 2
+        self.buttonDecifra = buttonPanel.addButton(text="Decifra->", row=1, column=0, columnspan=2, command=self.decifra)
+        self.buttonDecifra["width"] = 20
+        self.buttonDecifra["height"] = 2
+        self.buttonHelp = buttonPanel.addButton(text="??Help??", row=1,column=1, columnspan=2, command=self.help)
+        self.buttonHelp["width"] = 15
+        self.buttonHelp["height"] = 2
+        self.LabelAuthor = buttonPanel.addLabel("Autore: Simone Tempesta\nwww.cyber-drops.com", row=3, column=0,columnspan=2)
 
     def selezionaPath(self):
         self.nomeDirect = filedialog.askdirectory(parent=self, title="CipherUpload")
@@ -67,21 +80,38 @@ class CriptoDriveGui(EasyFrame):
         self.path_tree = cryptoDrive.elabora_path(self.selected_path)
 
     def select_s_key(self):
-        self.nome_s_k = filedialog.askopenfilename(title="Simmetryc Key",filetypes=[("simmetry_key", ".key")])
-        self.S_K_Path.setText(self.nome_s_k)
+        key_radio_button = self.Key_radioGroup.getSelectedButton()["text"]
+        if key_radio_button == "NewSimmetricKey" or key_radio_button == "BothKey":
+            self.nome_s_k = filedialog.askdirectory(title="directory Key")
+            self.S_K_Path.setText(f"{self.nome_s_k}/simmetric.key")
+            self.nome_s_k = f"{self.nome_s_k}/simmetric.key"
+        else:
+            self.nome_s_k = filedialog.askopenfilename(title="Simmetryc Key",filetypes=[("simmetry_key", ".key")])
+            self.S_K_Path.setText(self.nome_s_k)
 
     def select_priv_key(self):
-        self.nome_pri_k = filedialog.askopenfilename(title="Private Key",filetypes=[("private_key", ".pem")])
-        self.Priv_K_Path.setText(self.nome_pri_k)
+        key_radio_button = self.Key_radioGroup.getSelectedButton()["text"]
+        if key_radio_button == "NewRsaKey" or key_radio_button == "BothKey":
+            self.nome_pri_k = filedialog.askdirectory(title="directory Key")
+            self.Priv_K_Path.setText(f"{self.nome_pri_k}/private.pem")
+            self.nome_pri_k = f"{self.nome_pri_k}/private.pem"
+        else:
+            self.nome_pri_k = filedialog.askopenfilename(title="Private Key",filetypes=[("private_key", ".pem")])
+            self.Priv_K_Path.setText(self.nome_pri_k)
 
     def select_pub_key(self):
-        self.nome_pub_key = filedialog.askopenfilename(title="Public Key",filetypes=[("public_key", ".pem")])
-        self.Pub_K_Path.setText(self.nome_pub_key)
-    '''
-    def selct_password(self):
-        self.passw = self.Alg_Passw.getText(self)
-        return self.passw
-    '''
+        key_radio_button = self.Key_radioGroup.getSelectedButton()["text"]
+        if key_radio_button == "NewRsaKey" or key_radio_button == "BothKey":
+            self.nome_pub_key = filedialog.askdirectory(title="directory Key")
+            self.Pub_K_Path.setText(f"{self.nome_pub_key}/public.pem")
+            self.nome_pub_key = f"{self.nome_pub_key}/public.pem"
+        else:
+            self.nome_pub_key = filedialog.askopenfilename(title="Public Key",filetypes=[("public_key", ".pem")])
+            self.Pub_K_Path.setText(self.nome_pub_key)
+   
+    def directory_drive(self):
+        pass
+
     def cifra(self):
         passw =self.Alg_Passw.getText()
         passw = bytes(passw, "UTF-8")
@@ -149,7 +179,8 @@ class CriptoDriveGui(EasyFrame):
         service = build_service(service=service,version=version,creds=creds)
         return service
 
-
+    def help(self):
+        pass
 
 def main():
     CriptoDriveGui().mainloop()
