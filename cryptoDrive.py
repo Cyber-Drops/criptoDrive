@@ -1,5 +1,6 @@
 import pathLocale
 import os
+import ntpath
 import io
 import mimetypes
 from pathLocale import path_scan
@@ -41,13 +42,16 @@ def cifratura(token, path_root: str ,files_list: list):
 def decifra(token, path_root: str, files_list: list):
     s_decifra_file(s_token=token, root=path_root, files=files_list)
 
-def upload_fileservice(service,root,files):
+def upload_fileservice(service,root,files,folderid):
+    print("aaa",folderid)
     for f in files:
         if ".py" not in f and ".key" not in f and ".pem" not in f and ".json" not in f:
             path_file = f"{root}\{f}"
             path_root, extension = os.path.splitext(path_file)
             mime = mimetypes.types_map[extension]
-            file_meta = {'name':f}
+            file_meta = {'name': f,'parents': [folderid]}
+            if folderid == None:
+                file_meta = {'name':f}
             media = MediaFileUpload(path_file, mimetype=mime, chunksize=262144, resumable=True)
             page_token = None
             response = service.files().list(q=f"name = '{f}'",
@@ -67,10 +71,11 @@ def upload_fileservice(service,root,files):
                         print("complete")'''
             else:
                 print("aggiorna")
+                file_meta = {'name': f, 'addParents': [folderid]}
                 for file in response.get('files', []):
                     fileid = file.get('id')
+                    print("fileid",fileid)
                     file = service.files().update(media_body=media, body=file_meta, fileId=fileid).execute()
-
 
 def download_fileservice(service,root,files):
     for f in files:
@@ -96,8 +101,25 @@ def download_fileservice(service,root,files):
                         status, done = downloader.next_chunk()
                         print("Download %d%%." % int(status.progress() * 100))
 
-
-
+def create_folder(service,folder_name):
+    folder_name = ntpath.basename(folder_name)
+    page_token = None
+    response = service.files().list(q=f"name = '{folder_name}'",
+                                    spaces='drive',
+                                    fields='nextPageToken, files(id, name)',
+                                    pageToken=page_token).execute()  # ritorna un json
+    print("resp", response)
+    if not response['files']:
+        file_metadata = {'name': f'{folder_name}','mimeType': 'application/vnd.google-apps.folder'}
+        file = service.files().create(body=file_metadata, fields='id').execute()
+        print(' Creata Folder ID: %s' % file.get('id'))
+        folderid = file.get('id')
+        return folderid
+    else:
+        for folder in response.get('files', []):
+            folderid = folder.get('id')
+            print("ddd",folderid)
+            return folderid
 #UPGRADE METADATI
 mimetypes.add_type("image/jpeg",".jfif")
 

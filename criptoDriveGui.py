@@ -36,6 +36,9 @@ class CriptoDriveGui(EasyFrame):
         self.bt_pub_key = dataPanel.addButton(text="Public_key", row=3, column=2, command=self.select_pub_key)
 
         #Panel tre
+        # Radio_label
+        self.radioLabel = radioPanel.addLabel(text="Modalità", row=0, column=1)
+        self.radioLabel["height"] = 0
         #Key_radioGroup
         self.Key_radioGroup = radioPanel.addRadiobuttonGroup(row=1,column=1, orient="horizontal")
         defaultKrb = self.Key_radioGroup.addRadiobutton(text="NewSimmetricKey")
@@ -43,23 +46,26 @@ class CriptoDriveGui(EasyFrame):
         self.Key_radioGroup.addRadiobutton(text="NewRsaKey")
         self.Key_radioGroup.addRadiobutton(text="BothKey")
         self.Key_radioGroup.addRadiobutton(text="KeyExist")
-
         #Path_radioGroup
-        self.radioLabel = radioPanel.addLabel(text="Modalità", row=0, column=1)
-        self.radioLabel["height"]=0
-        self.Path_radioGroup = radioPanel.addRadiobuttonGroup(row=2, column=1)
+        self.Path_radioGroup = radioPanel.addRadiobuttonGroup(row=2, column=1, orient="horizontal")
         defaultPrb = self.Path_radioGroup.addRadiobutton(text="LocalPath")
         self.Path_radioGroup.setSelectedButton(defaultPrb)
         self.Path_radioGroup.addRadiobutton(text="Recursive")
+        #Folder_radioGroup
+        self.Folder_radioGroup = radioPanel.addRadiobuttonGroup(row=3,column=1, orient="horizontal")
+        defaultFold = self.Folder_radioGroup.addRadiobutton(text="Generale")
+        self.Folder_radioGroup.setSelectedButton(defaultFold)
+        self.Folder_radioGroup.addRadiobutton(text="DriveFolder")
         #Reomote_radioGroup
-        self.Remote_radioGroup = radioPanel.addRadiobuttonGroup(row=3, column=1, orient="horizontal")
+        self.Remote_radioGroup = radioPanel.addRadiobuttonGroup(row=4, column=1, orient="horizontal")
         defaultRrb = self.Remote_radioGroup.addRadiobutton(text="Nothing")
         self.Remote_radioGroup.setSelectedButton(defaultRrb)
         self.Remote_radioGroup.addRadiobutton(text="Upload")
         self.Remote_radioGroup.addRadiobutton(text="Download")
 
+
         # Panel quattro
-        self.new_directory = buttonPanel.addButton(text="cartella_drive", row=0, column=0, command=self.directory_drive)
+        self.new_directory = buttonPanel.addButton(text="DriveFolder", row=0, column=0, command=self.directory_drive)
         self.buttonCifra = buttonPanel.addButton(text="Cifra->", row=0, column=0, columnspan=2, command=self.cifra)
         self.buttonCifra["width"] = 20
         self.buttonCifra["height"] = 2
@@ -108,8 +114,11 @@ class CriptoDriveGui(EasyFrame):
         else:
             self.nome_pub_key = filedialog.askopenfilename(title="Public Key",filetypes=[("public_key", ".pem")])
             self.Pub_K_Path.setText(self.nome_pub_key)
-   
+
     def directory_drive(self):
+        pass
+
+    def share_file_folder(self):
         pass
 
     def cifra(self):
@@ -118,6 +127,7 @@ class CriptoDriveGui(EasyFrame):
         simmetric_key, token, public_key, private_key = cryptoDrive.gestisci_key(nome_s_k=self.nome_s_k,nome_pri_k=self.nome_pri_k,nome_pub_key=self.nome_pub_key,alg_passw=passw)
         path_radio_button = self.Path_radioGroup.getSelectedButton()["text"]
         remote_radio_button = self.Remote_radioGroup.getSelectedButton()["text"]
+        folder_radio_button = self.Folder_radioGroup.getSelectedButton()["text"]
         if remote_radio_button == "Upload":
             service = self.connetti()
         if path_radio_button == "LocalPath":
@@ -126,8 +136,13 @@ class CriptoDriveGui(EasyFrame):
             cryptoDrive.cifratura(token=token, path_root=path_root, files_list=files_list)
             self.buttonCifra["state"] = "disable"
             self.buttonDecifra["state"] = "normal"
-            if remote_radio_button == "Upload":
-                cryptoDrive.upload_fileservice(service,path_root,files_list)
+            if remote_radio_button == "Upload" and folder_radio_button == "Generale":
+                folderid = None
+                cryptoDrive.upload_fileservice(service=service,root=path_root,files=files_list,folderid=folderid)
+            if remote_radio_button == "Upload" and folder_radio_button == "DriveFolder":
+                self.drive_folder = filedialog.askdirectory(title="Drive Directory")
+                folderid = cryptoDrive.create_folder(service=service,folder_name=self.drive_folder)
+                cryptoDrive.upload_fileservice(service=service, root=path_root, files=files_list, folderid=folderid)
         else:
             for directory in self.path_tree.keys():
                 path_root = directory
